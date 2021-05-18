@@ -1,0 +1,14 @@
+.vs
+*.aps
+*.user
+bin/
+obj/
+Win32/
+x64/
+Debug/
+Release/
+*.APS
+*.i
+*_i.c
+*_i.h
+openssh-portable/
