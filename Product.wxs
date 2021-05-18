@@ -71,7 +71,7 @@
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="$(var.installDir)">
-        <Directory Id="INSTALLFOLDER" Name="OpenSSHForWindows" />
+        <Directory Id="INSTALLFOLDER" Name="OpenSSH for Windows" />
       </Directory>
     </Directory>
   </Fragment>
