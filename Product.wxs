@@ -3,22 +3,23 @@
   <?if $(var.Platform) = x86 ?>
   <?define upgradeCode = "9b6723f3-11d2-41ff-a3be-93c22b905dc4" ?>
   <?define sourceArch = "Win32" ?>
-  <?define isWin64 = "no" ?>
+  <?define libreSSLSourceArch = "x86" ?>
   <?define installDir = "ProgramFilesFolder" ?>
-  
+
   <?elseif $(var.Platform) = x64 ?>
   <?define upgradeCode = "e559b02a-21e5-4696-87b0-9982cf1b8e3f" ?>
   <?define sourceArch = "x64" ?>
-  <?define isWin64 = "yes" ?>
+  <?define libreSSLSourceArch = "x64" ?>
   <?define installDir = "ProgramFiles64Folder" ?>
-  
+
   <?else ?>
   <?error Unsupported platform ?>
   <?endif ?>
-  
+
   <?define sourcePath = "$(var.ProjectDir)\openssh-portable" ?>
   <?define archSourcePath = "$(var.sourcePath)\$(var.sourceArch)\$(var.Configuration)" ?>
-  
+  <?define libreSSLSourcePath = "$(var.ProjectDir)\LibreSSL\bin\desktop\$(var.libreSSLSourceArch)" ?>
+
   <Product
     Id="*"
     Name="OpenSSH for Windows"
@@ -28,24 +29,26 @@
     UpgradeCode="$(var.upgradeCode)">
 
     <Package
-      InstallerVersion="200"
+      InstallerVersion="500"
       Compressed="yes"
-      InstallScope="perMachine"
-      Comments="!(bind.fileVersion.ssh.exe), LibreSSL !(bind.fileVersion.libcrypto.dll)" />
+      Comments="OpenSSH !(bind.fileVersion.ssh.exe) with LibreSSL !(bind.fileVersion.libcrypto.dll)" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
-    <Feature Id="ClientFeature" Title="OpenSSH for Windows Client" Level="1" AllowAdvertise="no">
-      <ComponentGroupRef Id="SharedComponents" />
+    <Property Id="ALLUSERS" Value="2" />
+    <Property Id="MSIINSTALLPERUSER" Value="1" />
+
+    <Feature Id="ClientFeature" Title="!(bind.property.ProductName) Client" Level="1" AllowAdvertise="no">
+      <ComponentGroupRef Id="CommonComponents" />
       <ComponentGroupRef Id="ClientComponents" />
       <Feature Id="ClientDebugFeature" Title="Client debug symbols" Level="100" AllowAdvertise="no">
         <ComponentGroupRef Id="ClientDebugComponents" />
       </Feature>
     </Feature>
 
-    <Feature Id="ServerFeature" Title="OpenSSH for Windows Server" Level="10" AllowAdvertise="no">
-      <ComponentGroupRef Id="SharedComponents" />
+    <Feature Id="ServerFeature" Title="!(bind.property.ProductName) Server" Level="10" AllowAdvertise="no">
+      <ComponentGroupRef Id="CommonComponents" />
       <ComponentGroupRef Id="ServerComponents" />
       <ComponentGroupRef Id="ServerScriptComponents" />
       <Feature Id="ServerDebugFeature" Title="Server debug symbols" Level="100" AllowAdvertise="no">
@@ -60,165 +63,153 @@
       </Feature>
     </Feature>
 
-    <Feature Id="PathFeature" Title="Add OpenSSH for Windows to PATH" Level="1" AllowAdvertise="no">
+    <Feature Id="PathFeature" Title="Add !(bind.property.ProductName) to PATH" Level="1" AllowAdvertise="no">
       <ComponentGroupRef Id="PathComponents" />
     </Feature>
 
-    <UIRef Id="WixUI_FeatureTree" />
-    <WixVariable Id="WixUILicenseRtf" Value="$(var.sourcePath)\LICENCE.rtf" />
+    <UIRef Id="WixUI_DualPurpose" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.sourcePath)\LICENSE.rtf" />
   </Product>
 
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="$(var.installDir)">
-        <Directory Id="INSTALLFOLDER" Name="OpenSSH for Windows" />
+        <Directory Id="INSTALLFOLDER" Name="!(bind.property.ProductName)" />
       </Directory>
     </Directory>
   </Fragment>
 
   <Fragment>
-    <ComponentGroup Id="LibreSSLComponents" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\libcrypto.dll" />
+    <ComponentGroup Id="LibreSSLComponents" Directory="INSTALLFOLDER" Source="$(var.libreSSLSourcePath)">
+      <Component>
+        <File Name="libcrypto.dll" />
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="LibreSSLDebugComponents" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\libcrypto.pdb" />
-      </Component>
-    </ComponentGroup>
-    
-    <ComponentGroup Id="SharedComponents" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.sourcePath)\CREDITS" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.sourcePath)\LICENCE" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.sourcePath)\README" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.sourcePath)\README.dns" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.sourcePath)\README.md" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.sourcePath)\README.platform" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.sourcePath)\README.privsep" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.sourcePath)\README.tun" />
-      </Component>
-    </ComponentGroup>
-    
-    <ComponentGroup Id="ClientComponents" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\scp.exe" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\sftp.exe" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh.exe" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-add.exe" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-agent.exe" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-keygen.exe" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-keyscan.exe" />
+    <ComponentGroup Id="LibreSSLDebugComponents" Directory="INSTALLFOLDER" Source="$(var.libreSSLSourcePath)">
+      <Component>
+        <File Name="libcrypto.pdb" />
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="ClientDebugComponents" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\scp.pdb" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\sftp.pdb" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh.pdb" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-add.pdb" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-agent.pdb" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-keygen.pdb" />
-      </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-keyscan.pdb" />
+    <ComponentGroup Id="CommonComponents" Directory="INSTALLFOLDER" Source="$(var.archSourcePath)">
+      <Component>
+        <File Name="LICENSE.txt" />
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="ServerComponents" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\sftp-server.exe" />
+    <ComponentGroup Id="ClientComponents" Directory="INSTALLFOLDER" Source="$(var.archSourcePath)">
+      <Component>
+        <File Name="scp.exe" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\sshd.exe" />
+      <Component>
+        <File Name="sftp.exe" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-shellhost.exe" />
+      <Component>
+        <File Name="ssh.exe" />
+      </Component>
+      <Component>
+        <File Name="ssh-add.exe" />
+      </Component>
+      <Component>
+        <File Name="ssh-agent.exe" />
+      </Component>
+      <Component>
+        <File Name="ssh-keygen.exe" />
+      </Component>
+      <Component>
+        <File Name="ssh-keyscan.exe" />
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="ServerDebugComponents" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\sftp-server.pdb" />
+    <ComponentGroup Id="ClientDebugComponents" Directory="INSTALLFOLDER" Source="$(var.archSourcePath)">
+      <Component>
+        <File Name="scp.pdb" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\sshd.pdb" />
+      <Component>
+        <File Name="sftp.pdb" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\ssh-shellhost.pdb" />
+      <Component>
+        <File Name="ssh.pdb" />
+      </Component>
+      <Component>
+        <File Name="ssh-add.pdb" />
+      </Component>
+      <Component>
+        <File Name="ssh-agent.pdb" />
+      </Component>
+      <Component>
+        <File Name="ssh-keygen.pdb" />
+      </Component>
+      <Component>
+        <File Name="ssh-keyscan.pdb" />
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="ServerScriptComponents" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\FixHostFilePermissions.ps1" />
+    <ComponentGroup Id="ServerComponents" Directory="INSTALLFOLDER" Source="$(var.archSourcePath)">
+      <Component>
+        <File Name="sftp-server.exe" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\FixUserFilePermissions.ps1" />
+      <Component>
+        <File Name="sshd.exe" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\install-sshd.ps1" />
+      <Component>
+        <File Name="ssh-shellhost.exe" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\moduli" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="ServerDebugComponents" Directory="INSTALLFOLDER" Source="$(var.archSourcePath)">
+      <Component>
+        <File Name="sftp-server.pdb" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\Openssh-events.man" />
+      <Component>
+        <File Name="sshd.pdb" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\OpenSSHUtils.psd1" />
+      <Component>
+        <File Name="ssh-shellhost.pdb" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\OpenSSHUtils.psm1" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="ServerScriptComponents" Directory="INSTALLFOLDER" Source="$(var.archSourcePath)">
+      <Component>
+        <File Name="FixHostFilePermissions.ps1" />
       </Component>
-      <Component Win64="$(var.isWin64)">
-        <File Source="$(var.archSourcePath)\uninstall-sshd.ps1" />
+      <Component>
+        <File Name="FixUserFilePermissions.ps1" />
+      </Component>
+      <Component>
+        <File Name="install-sshd.ps1" />
+      </Component>
+      <Component>
+        <File Name="moduli" />
+      </Component>
+      <Component>
+        <File Name="Openssh-events.man" />
+      </Component>
+      <Component>
+        <File Name="OpenSSHUtils.psd1" />
+      </Component>
+      <Component>
+        <File Name="OpenSSHUtils.psm1" />
+      </Component>
+      <Component>
+        <File Name="sshd_config_default" />
+      </Component>
+      <Component>
+        <File Name="uninstall-sshd.ps1" />
       </Component>
     </ComponentGroup>
 
     <ComponentGroup Id="PathComponents" Directory="INSTALLFOLDER">
-      <Component Id="PathExtend" Win64="$(var.isWin64)">
-        <RegistryValue Root="HKLM" Key="Software\OpenSSHForWindows" Type="string" Name="InstallFolder" Value="[INSTALLFOLDER]" />
-        <Environment Id="PathExtend" Name="PATH" Action="set" Part="first" Permanent="no" System="yes" Value="[INSTALLFOLDER]" />
+      <Component>
+        <Condition>MSIINSTALLPERUSER = ""</Condition>
+        <RegistryValue Root="HKMU" Key="Software\OpenSSHForWindows" Type="string" Name="InstallFolderAllUsers" Value="[INSTALLFOLDER]" />
+        <Environment Id="PathExtendAllUsers" Name="PATH" Action="set" Part="first" Permanent="no" System="yes" Value="[INSTALLFOLDER]" />
+      </Component>
+      <Component>
+        <Condition>MSIINSTALLPERUSER = 1</Condition>
+        <RegistryValue Root="HKMU" Key="Software\OpenSSHForWindows" Type="string" Name="InstallFolderCurrentUser" Value="[INSTALLFOLDER]" />
+        <Environment Id="PathExtendCurrentUser" Name="PATH" Action="set" Part="first" Permanent="no" System="no" Value="[INSTALLFOLDER]" />
       </Component>
     </ComponentGroup>
   </Fragment>
